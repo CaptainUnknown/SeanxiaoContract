@@ -5,54 +5,70 @@ import "github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/uti
 import "github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/token/ERC721/ERC721.sol";
 import "github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/security/ReentrancyGuard.sol";
 
-contract marketPlaceBoilerPlate is ReentrancyGuard {
+contract saleContract is ReentrancyGuard {
     using Counters for Counters.Counter;
     Counters.Counter private _itemIds;
     Counters.Counter private _itemsSold;
     
-     address public owner;
+    address public owner;
+    address[] public whiteListedpeeps;
+    address public _whitelistpeep;
      
-     constructor() {
-         owner = msg.sender;
-     }
+    constructor() {
+        owner = msg.sender;
+    }
      
-     struct MarketItem {
-         uint itemId;                   //Generates a new Market item ID
-         address nftContract;           //Store NFT Status -->
-         uint256 tokenId;
-         address payable seller;
-         address payable owner;
-         uint256 price;
-         bool sold;
-     }
+    struct MarketItem {
+        uint itemId;                   //Generates a new Market item ID
+        address nftContract;           //Store NFT Status -->
+        uint256 tokenId;
+        address payable seller;
+        address payable owner;
+        uint256 price;
+        bool isPrivate;
+        bool sold;
+    }
      
-     mapping(uint256 => MarketItem) private idToMarketItem;
-
-     //Passes all variables to Event listener     
-     event MarketItemCreated (
+    mapping(uint256 => MarketItem) private idToMarketItem;
+    mapping (address => bool) isWhiteListed;
+ 
+    event MarketItemCreated (
         uint indexed itemId,
         address indexed nftContract,
         uint256 indexed tokenId,
         address seller,
         address owner,
         uint256 price,
+        bool isPrivate,
         bool sold
-     );
+    );
      
-     event MarketItemSold (
-         uint indexed itemId,
-         address owner
-         );
-     
-    
+    event MarketItemSold (
+        uint indexed itemId,
+        address owner
+        );
+        
+        //-------------->
+    function WhitelistAddress(address _whitelistpeep) external returns (bool){
+        require (isWhiteListed[_whitelistpeep] == false, "Already whitelisted");
+        isWhiteListed[_whitelistpeep] = true;
+        whiteListedpeeps.push(_whitelistpeep);
+        return true;
+    }
+
+    function isAddressWhitelisted(address _whitelistpeep) internal view returns (bool){
+        return isWhiteListed[_whitelistpeep];
+    }
     
     function createMarketItem(
         address nftContract,
         uint256 tokenId,
-        uint256 price
+        uint256 price,
+        bool isPrivate
         ) public payable nonReentrant {
             require(price > 0, "Price must be greater than 0");
-            
+            require(price <= 1, "Price must be Equal to or smaller than 1 Eth");
+
             _itemIds.increment();
             uint256 itemId = _itemIds.current();
   
@@ -63,6 +79,7 @@ contract marketPlaceBoilerPlate is ReentrancyGuard {
                 payable(msg.sender),
                 payable(address(0)),
                 price,
+                isPrivate,
                 false
             );
             
@@ -75,6 +92,7 @@ contract marketPlaceBoilerPlate is ReentrancyGuard {
                 msg.sender,
                 address(0),
                 price,
+                isPrivate,
                 false
             );
         }
@@ -85,9 +103,14 @@ contract marketPlaceBoilerPlate is ReentrancyGuard {
         ) public payable nonReentrant {
             uint price = idToMarketItem[itemId].price;
             uint tokenId = idToMarketItem[itemId].tokenId;
+            bool isPrivate = idToMarketItem[itemId].isPrivate;
             bool sold = idToMarketItem[itemId].sold;
             require(msg.value == price, "Please submit the asking price in order to complete the purchase");
             require(sold != true, "This item has already been Sold!");
+            if(isPrivate){
+                require(isAddressWhitelisted(owner), "You are not Whitelisted!");
+            }
+
             emit MarketItemSold(
                 itemId,
                 msg.sender
@@ -116,5 +139,4 @@ contract marketPlaceBoilerPlate is ReentrancyGuard {
         }
         return items;
     }
-      
 }
