@@ -67,7 +67,12 @@ contract saleContract is ReentrancyGuard {
         bool isPrivate
         ) public payable nonReentrant {
             require(price > 0, "Price must be greater than 0");
-            require(price <= 1, "Price must be Equal to or smaller than 1 Eth");
+            if(isPrivate){
+                require(price <= 0.8, "Price must be Equal to or smaller than 0.8 Eth for a Private Sale");
+            }
+            else{
+                require(price <= 1, "Price must be Equal to or smaller than 1 Eth for a Public Sale");
+            }
 
             _itemIds.increment();
             uint256 itemId = _itemIds.current();
