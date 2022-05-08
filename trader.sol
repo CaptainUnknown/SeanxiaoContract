@@ -1,29 +1,76 @@
 //SPX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.4;
 
-import "github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/utils/Counters.sol";
-import "github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/token/ERC721/ERC721.sol";
+import "github.com/OpenZeppelin/openzeppelin-contracts/blob/v4.6.0/contracts/token/ERC721/ERC721.sol";
+import "github.com/OpenZeppelin/openzeppelin-contracts/blob/v4.6.0/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
+import "github.com/OpenZeppelin/openzeppelin-contracts/blob/v4.6.0/contracts/token/ERC721/extensions/ERC721Burnable.sol";
+import "github.com/OpenZeppelin/openzeppelin-contracts/blob/v4.6.0/contracts/access/Ownable.sol";
+import "github.com/OpenZeppelin/openzeppelin-contracts/blob/v4.6.0/contracts/utils/Counters.sol";
 import "github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/security/ReentrancyGuard.sol";
 
-contract saleContract is ReentrancyGuard {
+
+contract saleContract is ERC721, ERC721URIStorage, ERC721Burnable, Ownable, ReentrancyGuard {
     using Counters for Counters.Counter;
     Counters.Counter private _itemIds;
     Counters.Counter private _itemsSold;
-    
-    address public owner;
+    Counters.Counter private _tokenIdCounter;
+
+    address public _owner;
     address[] public whiteListedpeeps;
     address public _whitelistpeep;
-     
-    constructor() {
-        owner = msg.sender;
+    
+    struct newMintItem {
+        string name;
+        string symbol;
+        bool isPrivate;
+    }
+    mapping(string => uint8) existingURIs;
+
+    constructor() ERC721("name", "symbol") {
+        _owner = msg.sender;
+    }
+
+    function mintItem(address recipient, string memory metadataURI) public payable returns (uint256) {
+        require(existingURIs[metadataURI] != 1, "NFT already Minted");
+        require (msg.value > 0 ether, "Please Pay Valid Amount");
+
+        uint256 newItemId = _tokenIdCounter.current();
+        _tokenIdCounter.increment();
+        existingURIs[metadataURI] = 1;
+
+        _mint(recipient, newItemId);
+        _setTokenURI(newItemId, metadataURI);
+
+        return newItemId;
+    }
+
+    function count() public view returns (uint256){
+        return _tokenIdCounter.current();
+    }
+
+    function isItemOwned(string memory uri) public view returns (bool) {
+        return existingURIs[uri] == 1;
+    }
+
+    function _burn(uint256 tokenId) internal override(ERC721, ERC721URIStorage) {
+        super._burn(tokenId);
+    }
+
+    function tokenURI(uint256 tokenId)
+        public
+        view
+        override(ERC721, ERC721URIStorage)
+        returns (string memory)
+    {
+        return super.tokenURI(tokenId);
     }
      
     struct MarketItem {
-        uint itemId;                   //Generates a new Market item ID
-        address nftContract;           //Store NFT Status -->
+        uint itemId;
+        address nftContract;
         uint256 tokenId;
         address payable seller;
-        address payable owner;
+        address payable _owner;
         uint256 price;
         bool isPrivate;
         bool sold;
@@ -37,7 +84,7 @@ contract saleContract is ReentrancyGuard {
         address indexed nftContract,
         uint256 indexed tokenId,
         address seller,
-        address owner,
+        address _owner,
         uint256 price,
         bool isPrivate,
         bool sold
@@ -45,7 +92,7 @@ contract saleContract is ReentrancyGuard {
      
     event MarketItemSold (
         uint indexed itemId,
-        address owner
+        address _owner
         );
         
         //-------------->
@@ -113,7 +160,7 @@ contract saleContract is ReentrancyGuard {
             require(msg.value == price, "Please submit the asking price in order to complete the purchase");
             require(sold != true, "This item has already been Sold!");
             if(isPrivate){
-                require(isAddressWhitelisted(owner), "You are not Whitelisted!");
+                require(isAddressWhitelisted(_owner), "You are not Whitelisted!");
             }
 
             emit MarketItemSold(
@@ -123,7 +170,7 @@ contract saleContract is ReentrancyGuard {
 
             idToMarketItem[itemId].seller.transfer(msg.value);
             IERC721(nftContract).transferFrom(address(this), msg.sender, tokenId);
-            idToMarketItem[itemId].owner = payable(msg.sender);
+            idToMarketItem[itemId]._owner = payable(msg.sender);
             _itemsSold.increment();
             idToMarketItem[itemId].sold = true;
         }
@@ -135,7 +182,7 @@ contract saleContract is ReentrancyGuard {
 
         MarketItem[] memory items = new MarketItem[](unsoldItemCount);
         for (uint i = 0; i < itemCount; i++) {
-            if (idToMarketItem[i + 1].owner == address(0)) {
+            if (idToMarketItem[i + 1]._owner == address(0)) {
                 uint currentId = i + 1;
                 MarketItem storage currentItem = idToMarketItem[currentId];
                 items[currentIndex] = currentItem;
