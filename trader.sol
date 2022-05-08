@@ -22,7 +22,6 @@ contract saleContract is ERC721, ERC721URIStorage, ERC721Burnable, Ownable, Reen
     struct newMintItem {
         string name;
         string symbol;
-        bool isPrivate;
     }
     mapping(string => uint8) existingURIs;
 
