@@ -16,11 +16,11 @@ for (let i = 1; i <= 500; i++) {
 
 function getNumber(num) {
     num = num.toString();
-    if (num.length < 9) {
+    if (num <= 9) {
         num = "00" + num;
         return num;
     }
-    if (num.length < 99) {
+    if (num >= 9 && num <= 99) {
         num = "0" + num;
         return num;
     } else {
