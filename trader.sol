@@ -19,19 +19,31 @@ contract saleContract is ERC721, ERC721URIStorage, ERC721Burnable, Ownable, Reen
     address[] public whiteListedpeeps;
     address public _whitelistpeep;
     
-    struct newMintItem {
-        string name;
-        string symbol;
-    }
     mapping(string => uint8) existingURIs;
 
-    constructor() ERC721("name", "symbol") {
+    constructor() ERC721("JPGO", "JPGO") {
         _owner = msg.sender;
+    }
+    
+    function _baseURI() internal pure override returns (string memory) {
+        return "ipfs://";
+    }
+    
+    function safeMint(address to) public onlyOwner {
+        uint256 tokenId = _tokenIdCounter.current();
+        _tokenIdCounter.increment();
+        _safeMint(to, tokenId);
     }
 
     function mintItem(address recipient, string memory metadataURI) public payable returns (uint256) {
-        require(existingURIs[metadataURI] != 1, "NFT already Minted");
-        require (msg.value > 0 ether, "Please Pay Valid Amount");
+        require(existingURIs[metadataURI] != 1, "NFT has already been Minted");
+        if(isAddressWhitelisted(_owner)){
+            require(price <= 0.8 ether, "Pay atleast 0.8 Ethereum");
+        }
+        else
+        {
+            require(price >= 1 ether, "Pay atleast 1 Ethereum");
+        }
 
         uint256 newItemId = _tokenIdCounter.current();
         _tokenIdCounter.increment();
