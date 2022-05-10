@@ -19,13 +19,9 @@ contract saleContract is ERC721, ERC721URIStorage, ERC721Burnable, Ownable, Reen
     address[] public whiteListedpeeps;
     address public _whitelistpeep;
     
-    struct newMintItem {
-        string name;
-        string symbol;
-    }
     mapping(string => uint8) existingURIs;
 
-    constructor() ERC721("name", "symbol") {
+    constructor() ERC721("Seanxiao", "SNX") {
         _owner = msg.sender;
     }
 
