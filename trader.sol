@@ -33,16 +33,17 @@ contract saleContract is ERC721, ERC721URIStorage, ERC721Burnable, Ownable, Reen
         uint256 tokenId = _tokenIdCounter.current();
         _tokenIdCounter.increment();
         _safeMint(to, tokenId);
+        _setTokenURI(tokenId, uri);
     }
 
     function mintItem(address recipient, string memory metadataURI) public payable returns (uint256) {
         require(existingURIs[metadataURI] != 1, "NFT has already been Minted");
         if(isAddressWhitelisted(_owner)){
-            require(price <= 0.8 ether, "Pay atleast 0.8 Ethereum");
+            require(msg.value <= 0.8 ether, "Pay atleast 0.8 Ethereum");
         }
         else
         {
-            require(price >= 1 ether, "Pay atleast 1 Ethereum");
+            require(msg.value >= 1 ether, "Pay atleast 1 Ethereum");
         }
 
         uint256 newItemId = _tokenIdCounter.current();
