@@ -30,6 +30,10 @@ contract JPGO is ERC721, ERC721URIStorage, Ownable {
         _setTokenURI(tokenId, uri);
         existingURIs[uri] = 1;
     }
+    
+    function withdrawETH() public payable onlyOwner {
+        payable(msg.sender).transfer(address(this).balance);
+    }
 
     // The following functions are overrides required by Solidity.
 
@@ -84,6 +88,4 @@ contract JPGO is ERC721, ERC721URIStorage, Ownable {
     function count() public view returns (uint256) {
         return _tokenIdCounter.current();
     }
-
-
 }
