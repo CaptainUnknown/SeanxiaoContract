@@ -34,6 +34,10 @@ contract JPGO is ERC721, ERC721URIStorage, Ownable {
     function withdrawETH() public payable onlyOwner {
         payable(msg.sender).transfer(address(this).balance);
     }
+    
+    function checkBalance() public view returns (uint256) {
+        return address(this).balance;
+    }
 
     // The following functions are overrides required by Solidity.
 
