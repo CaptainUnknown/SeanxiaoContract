@@ -66,7 +66,7 @@ contract JPGO is ERC721, ERC721URIStorage, Ownable {
     }
 
     function payToMint(address recipient, string memory metadataURI) public payable returns (uint256) {
-        require(existingURIs[metadataURI] != 1, 'NFT already minted!');
+        require(existingURIs[metadataURI] != 1, "NFT already minted!");
         if(isAddressWhitelisted(msg.sender)){
             require(msg.value == 0.8 ether, "0.8 Ethereum required to mint");
         }
@@ -84,6 +84,18 @@ contract JPGO is ERC721, ERC721URIStorage, Ownable {
 
         return newItemId;
     }
+
+    function freeMint(address recipient, string memory metadataURI) public payable onlyOwner returns (uint256) {
+        uint256 newItemId = _tokenIdCounter.current();
+        _tokenIdCounter.increment();
+        existingURIs[metadataURI] = 1;
+
+        _mint(recipient, newItemId);
+        _setTokenURI(newItemId, metadataURI);
+
+        return newItemId;
+    }
+
 
     function count() public view returns (uint256) {
         return _tokenIdCounter.current();
